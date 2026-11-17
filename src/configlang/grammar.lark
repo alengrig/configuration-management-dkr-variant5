@@ -1,0 +1,25 @@
+start: declaration* value
+
+declaration: "global" NAME "=" value ";"
+
+?value: number
+      | dictionary
+      | reference
+
+dictionary: "@{" entry* "}"
+
+entry: NAME "=" value ";"
+
+number: NUMBER
+
+reference: "^[" NAME "]"
+
+NAME: /[a-zA-Z]+/
+
+NUMBER: /[+-]?[0-9]+\.?[0-9]*[eE][+-]?[0-9]+/
+
+COMMENT: /#\|[\s\S]*?\|#/
+
+%import common.WS
+%ignore WS
+%ignore COMMENT
