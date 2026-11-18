@@ -1,0 +1,52 @@
+name: Check configuration translator
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Check Python style
+        run: python -m ruff check src tests scripts
+
+      - name: Check assignment restrictions
+        run: python scripts/check_quality.py
+
+      - name: Check cyclomatic complexity
+        run: |
+          violations="$(python -m radon cc src tests scripts -s -n C)"
+
+          if [ -n "$violations" ]; then
+            printf '%s\n' "$violations"
+            exit 1
+          fi
+
+          echo "Cyclomatic complexity: OK"
+
+      - name: Run unit tests
+        run: PYTHONPATH=src python -m unittest discover -s tests -v
+
+      - name: Check example configurations
+        run: |
+          ./run.sh --output output/network.yaml < examples/network.cfg
+          ./run.sh --output output/laboratory.yaml < examples/laboratory.cfg
+
+          test -s output/network.yaml
+          test -s output/laboratory.yaml
